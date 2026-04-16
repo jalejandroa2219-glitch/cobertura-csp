@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>CSP Lifesciences - Cobertura Perú | Mapa Corporativo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(145deg, #dce3ec 0%, #eef2f8 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+            padding: 24px;
+        }
+
+        .slide {
+            width: 1280px;
+            height: 720px;
+            background: rgba(255, 255, 255, 0.96);
+            border-radius: 32px;
+            box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: linear-gradient(105deg, #0a3e5c 0%, #0f5b7a 100%);
+            padding: 14px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .title-section h1 {
+            color: white;
+            font-size: 22px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .title-section p {
+            color: #c4e2ff;
+            font-size: 11px;
+            margin-top: 4px;
+            font-weight: 500;
+        }
+
+        .legend-badge {
+            display: flex;
+            gap: 28px;
+            background: rgba(255, 255, 255, 0.12);
+            padding: 6px 22px;
+            border-radius: 60px;
+            backdrop-filter: blur(4px);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .color-box {
+            width: 20px;
+            height: 20px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        .color-box.azul {
+            background: #3b8fd9;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+
+        .color-box.gris {
+            background: #b8c4dd;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .map-wrapper {
+            flex: 1;
+            display: flex;
+            padding: 20px 24px;
+            gap: 24px;
+            background: #f5f7fc;
+            overflow: hidden;
+        }
+
+        .map-container {
+            flex: 2;
+            background: #fdfaf2;
+            border-radius: 28px;
+            box-shadow: 0 12px 28px -8px rgba(0, 0, 0, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            overflow: hidden;
+            position: relative;
+        }
+
+        #peruMap {
+            height: 100%;
+            width: 100%;
+            background: #eef2f0;
+        }
+
+        .coverage-panel {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.94);
+            border-radius: 28px;
+            box-shadow: 0 12px 28px -8px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(224, 232, 240, 0.8);
+            padding: 16px 14px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow-y: visible;
+        }
+
+        .coverage-panel h3 {
+            font-size: 16px;
+            font-weight: 800;
+            color: #0c4e6e;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-left: 4px solid #3b8fd9;
+            padding-left: 12px;
+        }
+
+        .stats {
+            background: linear-gradient(120deg, #eef6ff, #e2edfc);
+            padding: 10px 6px;
+            border-radius: 20px;
+            text-align: center;
+            margin-bottom: 14px;
+        }
+
+        .stats .count {
+            font-size: 34px;
+            font-weight: 800;
+            color: #1a66b3;
+            line-height: 1;
+        }
+
+        .stats .label {
+            font-size: 10px;
+            color: #2c5a7a;
+            font-weight: 600;
+            margin-top: 3px;
+        }
+
+        .region-list {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 7px 10px;
+            margin-top: 2px;
+            max-height: none;
+            overflow-y: visible;
+        }
+
+        .region-item {
+            background: #f9fbfe;
+            border-radius: 12px;
+            padding: 5px 8px;
+            border-left: 3px solid #3b8fd9;
+            font-size: 10.5px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.1s;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+        }
+        
+        .region-item img.logo-mini {
+            width: 18px;
+            height: 18px;
+            object-fit: contain;
+            border-radius: 3px;
+            flex-shrink: 0;
+        }
+
+        .region-name {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-size: 10.5px;
+            font-weight: 600;
+        }
+
+        .badge-mini {
+            font-size: 8px;
+            background: #3b8fd9;
+            padding: 2px 6px;
+            border-radius: 30px;
+            color: white;
+            font-weight: 700;
+            letter-spacing: 0.2px;
+            flex-shrink: 0;
+        }
+
+        .info-sin-cobertura {
+            margin-top: 14px;
+            background: #fef3e8;
+            border-radius: 16px;
+            padding: 9px 10px;
+            font-size: 9.5px;
+            font-weight: 500;
+            color: #b45a2b;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .footer {
+            background: #eef2f9;
+            padding: 9px 24px;
+            text-align: center;
+            font-size: 10px;
+            font-weight: 500;
+            color: #4a627a;
+            border-top: 1px solid #dce5ef;
+        }
+
+        .leaflet-container {
+            background: #dfe4ed;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .leaflet-popup-content-wrapper {
+            border-radius: 20px;
+            font-family: 'Inter', sans-serif;
+            box-shadow: 0 12px 24px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        .leaflet-tooltip.custom-tooltip {
+            background: #0f3f57;
+            color: white;
+            font-weight: 500;
+            font-size: 10px;
+            padding: 4px 10px;
+            border-radius: 40px;
+            border: none;
+        }
+
+        .leaflet-control-zoom a {
+            background: rgba(255, 255, 255, 0.9) !important;
+            color: #0c4e6e !important;
+            border-radius: 12px !important;
+            margin: 3px !important;
+            backdrop-filter: blur(4px);
+        }
+        .leaflet-control-zoom {
+            border: none !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+            border-radius: 24px !important;
+            background: rgba(255, 255, 255, 0.3) !important;
+        }
+        
+        .leaflet-interactive {
+            transition: fill-opacity 0.2s, stroke-width 0.1s;
+        }
+        
+        /* Estilos para la gota blanca con logo TAMAÑO MÁXIMO */
+        .drop-pin-large {
+            background: white;
+            border-radius: 50% 50% 50% 0;
+            width: 52px !important;
+            height: 52px !important;
+            transform: rotate(-45deg);
+            box-shadow: 0 6px 14px rgba(0,0,0,0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid rgba(59,143,217,0.3);
+            transition: all 0.1s ease;
+        }
+        
+        .drop-pin-large img {
+            transform: rotate(45deg);
+            width: 34px !important;
+            height: 34px !important;
+            object-fit: contain;
+            max-width: 34px;
+            max-height: 34px;
+        }
+        
+        .marker-label-large {
+            font-size: 10px;
+            font-weight: 700;
+            color: #000000;
+            background: transparent;
+            margin-top: 8px;
+            text-align: center;
+            text-shadow: 0 0 3px white;
+            white-space: nowrap;
+        }
+        
+        .custom-marker-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+        
+        /* Estilo para regiones sin cobertura (solo texto) */
+        .text-only-marker {
+            background: transparent !important;
+        }
+        
+        .sin-cobertura-text {
+            font-size: 9px;
+            font-weight: 600;
+            color: #6b7280;
+            background: rgba(255,255,240,0.7);
+            padding: 2px 6px;
+            border-radius: 12px;
+            white-space: nowrap;
+            backdrop-filter: blur(2px);
+        }
+    </style>
+</head>
+<body>
+<div class="slide">
+    <div class="header">
+        <div class="title-section">
+            <h1><i class="fas fa-chart-network"></i> Cobertura CSP Lifesciences</h1>
+            <p>Presencia comercial activa · Mediante nuestros socios estrategicos (Distribuidoras)</p>
+        </div>
+        <div class="legend-badge">
+            <div class="legend-item"><div class="color-box azul"></div><span>Cobertura CSP</span></div>
+            <div class="legend-item"><div class="color-box gris"></div><span>Sin cobertura</span></div>
+        </div>
+    </div>
+
+    <div class="map-wrapper">
+        <div class="map-container">
+            <div id="peruMap"></div>
+        </div>
+        <div class="coverage-panel">
+            <h3><i class="fas fa-map-pin"></i> Departamentos con presencia</h3>
+            <div class="stats">
+                <div class="count" id="coverageCount">24</div>
+                <div class="label">regiones con cobertura activa</div>
+                <div style="font-size: 9px; margin-top: 3px;"><i class="fas fa-chart-line"></i> 92% del territorio comercial</div>
+            </div>
+            <div id="regionList" class="region-list"></div>
+            <div class="info-sin-cobertura">
+                <i class="fas fa-info-circle"></i>
+                <span><strong>Sin cobertura:</strong> Loreto y Tumbes (evaluación futura)</span>
+            </div>
+        </div>
+    </div>
+    <div class="footer">
+        <i class="fas fa-hand-peace"></i> 24/26 departamentos cubiertos · Interactúa: zoom, arrastra y clic en cada región
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    // ============================================================
+    // GEOJSON CON LÍMITES SUAVES
+    // ============================================================
+    const peruGeoJSONArmonico = {
+      "type": "FeatureCollection",
+      "features": [
+        {"type":"Feature","properties":{"NOMBRE_DEP":"AMAZONAS"},"geometry":{"type":"Polygon","coordinates":[[[-78.9,-4.8],[-77.2,-4.7],[-76.8,-5.9],[-77.1,-7.0],[-78.4,-7.2],[-79.0,-6.3],[-78.9,-4.8]]]}},
+        {"type":"Feature","properties":{"NOMBRE_DEP":"ANCASH"},"geometry":{"type":"Polygon","coordinates":[[[-78.6,-8.2],[-77.1,-8.1],[-76.7,-9.5],[-76.9,-10.4],[-78.3,-10.6],[-78.8,-9.7],[-78.6,-8.2]]]}},
+        {"type":"Feature","properties":{"NOMBRE_DEP":"APURIMAC"},"geometry":{"type":"Polygon","coordinates":[[[-73.7,-13.1],[-72.6,-13.0],[-72.2,-14.0],[-72.4,-14.7],[-73.5,-14.8],[-73.9,-14.1],[-73.7,-13.1]]]}},
+        {"type":"Feature","properties":{"NOMBRE_DEP":"AREQUIPA"},"geometry":{"type":"Polygon","coordinates":[[[-72.4,-14.9],[-71.1,-14.8],[-70.7,-16.1],[-70.9,-17.3],[-72.2,-17.4],[-72.7,-16.4],[-72.4,-14.9]]]}},
+        {"type":"Feature","properties":{"NOMBRE_DEP":"AYACUCHO"},"geometry":{"type":"Polygon","coordinates":[[[-74.9,-12.4],[-73.4,-12.3],[-72.9,-13.7],[-73.1,-15.0],[-74.5,-15.1],[-75.1,-14.1],[-74.9,-12.4]]]}},
+        {"type":"Feature","properties":{"NOMBRE_DEP":"CAJAMARCA"},"geometry":{"type":"Polygon","coordinates":[[[-79.5,-4.9],[-77.9,-4.7],[-77.5,-6.1],[-77.8,-7.4],[-79.1,-7.6],[-79.7,-6.5],[-79.5,-4.9]]]}},
+        {"type":"Feature","properties":{"NOMBRE_DEP":"CALLAO"},"geometry":{"type":"Polygon","coordinates":[[[-77.24,-11.94],[-77.09,-11.93],[-77.04,-12.04],[-77.17,-12.11],[-77.27,-12.05],[-77.24,-11.94]]]}},
+        {"type":"Feature","properties":{"NOMBRE_DEP":"CUSCO"},"geometry":{"type":"Polygon","coordinates":[[[-73.3,-11.7],[-71.4,-11.6],[-70.9,-13.1],[-71.2,-15.0],[-72.7,-15.1],[-73.5,-13.9],[-73.3,-11.7]]]}},
+        {"type":"Feature","properties":{"NOMBRE_DEP":"HUANCAVELICA"},"geometry":{"type":"Polygon","coordinates":[[[-75.6,-12.2],[-74.3,-12.1],[-73.9,-13.4],[-74.1,-14.2],[-75.4,-14.3],[-75.8,-13.3],[-75.6,-12.2]]]}},
+        {"type":"Feature","properties":{"NOMBRE_DEP":"HUANUCO"},"geometry":{"type":"Polygon","coordinates":[[[-76.9,-7.9],[-75.4,-7.8],[-74.9,-9.3],[-75.2,-10.3],[-76.6,-10.4],[-77.1,-9.3],[-76.9,-7.9]]]}},
+        {"type":"Feature","properties":{"NOMBRE_DEP":"ICA"},"geometry":{"type":"Polygon","coordinates":[[[-76.3,-13.5],[-75.1,-13.4],[-74.7,-14.5],[-74.9,-15.3],[-76.2,-15.4],[-76.6,-14.5],[-76.3,-13.5]]]}},
+        {"type":"Feature","properties":{"NOMBRE_DEP":"JUNIN"},"geometry":{"type":"Polygon","coordinates":[[[-76.4,-10.5],[-74.9,-10.4],[-74.4,-11.8],[-74.6,-12.9],[-76.0,-13.0],[-76.6,-12.0],[-76.4,-10.5]]]}},
+        {"type":"Feature","properties":{"NOMBRE_DEP":"LA LIBERTAD"},"geometry":{"type":"Polygon","coordinates":[[[-79.3,-6.9],[-77.7,-6.8],[-77.2,-8.1],[-77.5,-9.1],[-78.9,-9.2],[-79.5,-8.2],[-79.3,-6.9]]]}},
+        {"type":"Feature","properties":{"NOMBRE_DEP":"LAMBAYEQUE"},"geometry":{"type":"Polygon","coordinates":[[[-80.5,-5.1],[-79.2,-5.0],[-78.8,-6.4],[-79.1,-7.3],[-80.4,-7.4],[-80.8,-6.4],[-80.5,-5.1]]]}},
+        {"type":"Feature","properties":{"NOMBRE_DEP":"LIMA"},"geometry":{"type":"Polygon","coordinates":[[[-77.9,-9.9],[-76.3,-9.8],[-75.8,-11.3],[-76.1,-12.8],[-77.6,-12.9],[-78.2,-11.6],[-77.9,-9.9]]]}},
+        {"type":"Feature","properties":{"NOMBRE_DEP":"LORETO"},"geometry":{"type":"Polygon","coordinates":[[[-75.9,-1.7],[-71.0,-1.5],[-70.4,-4.3],[-71.7,-6.6],[-74.6,-6.9],[-76.1,-5.1],[-75.9,-1.7]]]}},
+        {"type":"Feature","properties":{"NOMBRE_DEP":"MADRE DE DIOS"},"geometry":{"type":"Polygon","coordinates":[[[-71.9,-10.7],[-69.7,-10.5],[-69.1,-12.3],[-69.4,-13.3],[-71.3,-13.6],[-72.1,-12.3],[-71.9,-10.7]]]}},
+        {"type":"Feature","properties":{"NOMBRE_DEP":"MOQUEGUA"},"geometry":{"type":"Polygon","coordinates":[[[-71.6,-15.7],[-70.6,-15.6],[-70.2,-16.9],[-70.5,-17.8],[-71.5,-17.9],[-71.9,-17.1],[-71.6,-15.7]]]}},
+        {"type":"Feature","properties":{"NOMBRE_DEP":"PASCO"},"geometry":{"type":"Polygon","coordinates":[[[-76.3,-9.4],[-74.9,-9.3],[-74.5,-10.4],[-74.7,-11.3],[-76.1,-11.4],[-76.5,-10.5],[-76.3,-9.4]]]}},
+        {"type":"Feature","properties":{"NOMBRE_DEP":"PIURA"},"geometry":{"type":"Polygon","coordinates":[[[-81.4,-3.9],[-79.9,-3.8],[-79.4,-5.1],[-79.7,-6.0],[-81.1,-6.1],[-81.6,-5.3],[-81.4,-3.9]]]}},
+        {"type":"Feature","properties":{"NOMBRE_DEP":"PUNO"},"geometry":{"type":"Polygon","coordinates":[[[-71.1,-13.9],[-69.4,-13.8],[-68.8,-15.5],[-69.1,-17.2],[-70.9,-17.3],[-71.6,-15.9],[-71.1,-13.9]]]}},
+        {"type":"Feature","properties":{"NOMBRE_DEP":"SAN MARTIN"},"geometry":{"type":"Polygon","coordinates":[[[-77.6,-5.1],[-76.1,-4.9],[-75.7,-6.4],[-76.0,-7.9],[-77.4,-8.1],[-77.9,-6.9],[-77.6,-5.1]]]}},
+        {"type":"Feature","properties":{"NOMBRE_DEP":"TACNA"},"geometry":{"type":"Polygon","coordinates":[[[-71.3,-16.9],[-69.9,-16.8],[-69.5,-18.1],[-69.9,-18.9],[-71.4,-18.7],[-71.7,-17.9],[-71.3,-16.9]]]}},
+        {"type":"Feature","properties":{"NOMBRE_DEP":"TUMBES"},"geometry":{"type":"Polygon","coordinates":[[[-81.0,-2.9],[-80.2,-2.8],[-79.8,-3.7],[-80.0,-4.3],[-80.9,-4.4],[-81.1,-3.8],[-81.0,-2.9]]]}},
+        {"type":"Feature","properties":{"NOMBRE_DEP":"UCAYALI"},"geometry":{"type":"Polygon","coordinates":[[[-74.9,-7.1],[-71.1,-6.9],[-69.9,-8.9],[-70.9,-10.7],[-73.9,-10.9],[-75.3,-9.3],[-74.9,-7.1]]]}}
+      ]
+    };
+    
+    const SIN_COBERTURA = ["LORETO", "TUMBES"];
+    const LOGO_URL = "https://i.imgur.com/VPuDQZD.png";
+    
+    function tieneCobertura(nombreDept) {
+        if (!nombreDept) return false;
+        const upper = nombreDept.toUpperCase().trim();
+        return !SIN_COBERTURA.includes(upper);
+    }
+    
+    // Lista de departamentos con cobertura (24)
+    const todosLosNombres = peruGeoJSONArmonico.features.map(f => f.properties.NOMBRE_DEP.toUpperCase());
+    const coberturaList = todosLosNombres.filter(dept => !SIN_COBERTURA.includes(dept)).sort();
+    
+    // Renderizar lista lateral
+    const regionContainer = document.getElementById('regionList');
+    if (regionContainer) {
+        regionContainer.innerHTML = coberturaList.map(dept => {
+            const nombreFormateado = dept.charAt(0) + dept.slice(1).toLowerCase();
+            return `
+                <div class="region-item">
+                    <img class="logo-mini" src="${LOGO_URL}" alt="logo CSP" onerror="this.style.display='none'">
+                    <span class="region-name">📍 ${nombreFormateado}</span>
+                    <span class="badge-mini">CSP</span>
+                </div>
+            `;
+        }).join('');
+    }
+    document.getElementById('coverageCount').innerText = coberturaList.length;
+    
+    // Inicializar mapa
+    const map = L.map('peruMap').setView([-9.3, -74.2], 6.2);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; CartoDB',
+        subdomains: 'abcd',
+        maxZoom: 9,
+        minZoom: 5
+    }).addTo(map);
+    
+    // Centroides para todas las regiones
+    const centroides = {
+        "AMAZONAS": [-6.2, -77.8], "ANCASH": [-9.4, -77.6], "APURIMAC": [-13.9, -72.9], "AREQUIPA": [-16.1, -71.5],
+        "AYACUCHO": [-13.8, -74.2], "CAJAMARCA": [-6.8, -78.5], "CALLAO": [-12.05, -77.15], "CUSCO": [-13.4, -71.9],
+        "HUANCAVELICA": [-13.2, -74.9], "HUANUCO": [-9.7, -76.1], "ICA": [-14.3, -75.6], "JUNIN": [-11.5, -75.4],
+        "LA LIBERTAD": [-8.0, -78.5], "LAMBAYEQUE": [-6.5, -79.8], "LIMA": [-11.8, -76.8], "LORETO": [-4.5, -73.5],
+        "MADRE DE DIOS": [-12.0, -70.5], "MOQUEGUA": [-16.8, -71.0], "PASCO": [-10.5, -75.8], "PIURA": [-5.2, -80.4],
+        "PUNO": [-15.5, -70.0], "SAN MARTIN": [-7.2, -76.8], "TACNA": [-17.6, -70.2], "TUMBES": [-3.6, -80.5], "UCAYALI": [-8.9, -73.5]
+    };
+    
+    // Función para crear marcador con gota BLANCA y LOGO TAMAÑO MÁXIMO (52px de gota, logo 34px)
+    function createDropMarkerWithLogo(nombre, tieneCob, latlng) {
+        const nombreMostrar = nombre.charAt(0) + nombre.slice(1).toLowerCase();
+        if (tieneCob) {
+            // GOTA GRANDE con logo enorme
+            const customHtml = `
+                <div class="custom-marker-container" style="display: flex; flex-direction: column; align-items: center;">
+                    <div class="drop-pin-large" style="background: white; border-radius: 50% 50% 50% 0; width: 52px; height: 52px; transform: rotate(-45deg); box-shadow: 0 6px 14px rgba(0,0,0,0.25); display: flex; align-items: center; justify-content: center; border: 2px solid rgba(59,143,217,0.4);">
+                        <img src="${LOGO_URL}" style="transform: rotate(45deg); width: 34px; height: 34px; object-fit: contain;" onerror="this.style.display='none'">
+                    </div>
+                    <div class="marker-label-large" style="font-size: 10px; font-weight: 700; color: #000000; background: transparent; margin-top: 8px; text-align: center; text-shadow: 0 0 3px white;">${nombreMostrar}</div>
+                </div>
+            `;
+            const icon = L.divIcon({
+                className: 'custom-drop-icon-wrapper',
+                html: customHtml,
+                iconSize: [60, 70],
+                iconAnchor: [30, 60],
+                popupAnchor: [0, -45]
+            });
+            return L.marker(latlng, { icon: icon, interactive: false });
+        } else {
+            // Sin cobertura: texto con fondo sutil
+            const textHtml = `
+                <div style="display: flex; flex-direction: column; align-items: center;">
+                    <span class="sin-cobertura-text" style="font-size: 9px; font-weight: 600; color: #4b5563; background: rgba(255,255,240,0.8); padding: 2px 8px; border-radius: 16px; white-space: nowrap; backdrop-filter: blur(2px);">${nombreMostrar}</span>
+                </div>
+            `;
+            const icon = L.divIcon({
+                className: 'text-only-marker',
+                html: textHtml,
+                iconSize: [80, 24],
+                iconAnchor: [40, 12],
+                popupAnchor: [0, -10]
+            });
+            return L.marker(latlng, { icon: icon, interactive: false });
+        }
+    }
+    
+    // Agregar marcadores para TODAS las regiones
+    const labelsLayer = L.layerGroup();
+    peruGeoJSONArmonico.features.forEach(feature => {
+        const nombre = feature.properties.NOMBRE_DEP;
+        const tieneCob = tieneCobertura(nombre);
+        if (centroides[nombre]) {
+            const coords = centroides[nombre];
+            const marker = createDropMarkerWithLogo(nombre, tieneCob, coords);
+            labelsLayer.addLayer(marker);
+        }
+    });
+    labelsLayer.addTo(map);
+    
+    // Capa de polígonos
+    const geojsonLayer = L.geoJSON(peruGeoJSONArmonico, {
+        style: function(feature) {
+            const nombre = feature.properties.NOMBRE_DEP;
+            const cobertura = tieneCobertura(nombre);
+            return {
+                color: "#ffffff",
+                weight: 1.2,
+                fillColor: cobertura ? "#3b8fd9" : "#b8c4dd",
+                fillOpacity: 0.48,
+                opacity: 0.65,
+                smoothFactor: 1.0,
+                lineCap: 'round',
+                lineJoin: 'round'
+            };
+        },
+        onEachFeature: function(feature, layer) {
+            const nombreRaw = feature.properties.NOMBRE_DEP;
+            const nombreFormal = nombreRaw.charAt(0) + nombreRaw.slice(1).toLowerCase();
+            const cobertura = tieneCobertura(nombreRaw);
+            
+            const estadoTexto = cobertura ? "✅ Con cobertura" : "❌ Sin cobertura";
+            const colorEstado = cobertura ? "#2a7fcf" : "#8d9bb0";
+            const detalle = cobertura ? "Fuerza comercial activa · Distribución consolidada" : "Región sin presencia actual";
+            
+            layer.bindPopup(`
+                <div style="font-family: 'Inter', sans-serif; padding: 6px; min-width: 180px;">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                        ${cobertura ? `<img src="${LOGO_URL}" style="width: 32px; height: 32px; object-fit: contain;" onerror="this.style.display='none'">` : '<i class="fas fa-map-marker-alt" style="font-size: 24px; color:#9ca3af;"></i>'}
+                        <strong style="color: ${colorEstado}; font-size: 15px;">${nombreFormal}</strong>
+                    </div>
+                    <span style="font-size: 12px; font-weight: 500;">${estadoTexto}</span><br>
+                    <span style="font-size: 10px; color: #4b5563;">📌 ${detalle}</span>
+                    ${cobertura ? '<div style="margin-top: 6px;"><i class="fas fa-check-circle" style="color:#3b8fd9; font-size: 9px;"></i> <span style="font-size: 9px;">Equipo comercial asignado</span></div>' : ''}
+                </div>
+            `, { maxWidth: 220 });
+            
+            layer.bindTooltip(`${nombreFormal} ${cobertura ? '🔵 Cobertura' : '⚪ Sin cobertura'}`, {
+                sticky: true,
+                className: 'custom-tooltip',
+                offset: [0, -6]
+            });
+            
+            layer.on('mouseover', function() {
+                layer.setStyle({ fillOpacity: 0.75, weight: 1.8, color: "#ffe0a3" });
+                layer.bringToFront();
+            });
+            layer.on('mouseout', function() {
+                const actualNombre = layer.feature.properties.NOMBRE_DEP;
+                const hasCov = tieneCobertura(actualNombre);
+                layer.setStyle({
+                    fillColor: hasCov ? "#3b8fd9" : "#b8c4dd",
+                    fillOpacity: 0.48,
+                    weight: 1.2,
+                    color: "#ffffff"
+                });
+            });
+        }
+    }).addTo(map);
+    
+    // Ajustar vista
+    let allBounds = [];
+    peruGeoJSONArmonico.features.forEach(feature => {
+        if (feature.geometry.type === "Polygon") {
+            feature.geometry.coordinates[0].forEach(coord => {
+                allBounds.push([coord[1], coord[0]]);
+            });
+        }
+    });
+    if (allBounds.length) {
+        const bounds = L.latLngBounds(allBounds);
+        map.fitBounds(bounds.pad(0.08));
+    } else {
+        map.setView([-9.2, -74.5], 6);
+    }
+    
+    setTimeout(() => {
+        map.invalidateSize();
+        geojsonLayer.eachLayer(layer => {
+            const props = layer.feature?.properties;
+            if (props) {
+                const nombre = props.NOMBRE_DEP;
+                const tiene = tieneCobertura(nombre);
+                layer.setStyle({
+                    fillColor: tiene ? "#3b8fd9" : "#b8c4dd",
+                    fillOpacity: 0.48
+                });
+            }
+        });
+    }, 120);
+    
+    L.control.scale({ metric: true, imperial: false, position: 'bottomright' }).addTo(map);
+    
+    const infoFloater = L.control({ position: 'topright' });
+    infoFloater.onAdd = function() {
+        const div = L.DomUtil.create('div', 'glass-info');
+        div.innerHTML = '<div style="background: rgba(255,255,245,0.75); backdrop-filter: blur(6px); padding: 4px 12px; border-radius: 40px; font-size: 10px; font-weight: 600; color:#0e4a6e;"><i class="fas fa-chart-line"></i> CSP · 23 regiones activas</div>';
+        return div;
+    };
+    infoFloater.addTo(map);
+    
+    console.log("Mapa final: LOGO EN GOTA TAMAÑO MÁXIMO (gota 52px, logo 34px) - Responde correctamente al zoom");
+</script>
+</body>
+</html>
